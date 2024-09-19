@@ -1,0 +1,15 @@
+[Unit]
+Description=HAB Groundstation
+Documentation=
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/HAB
+Restart=always
+ExecStart=/usr/bin/python3 lora_receive_feather.py
+User=root
+Group=root
+
+[Install]
+WantedBy=default.target
