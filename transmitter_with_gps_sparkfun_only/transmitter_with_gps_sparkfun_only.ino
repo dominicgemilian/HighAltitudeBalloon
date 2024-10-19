@@ -13,6 +13,12 @@
 #include <string>
 #include <TinyGPS++.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library:  http://librarymanager/All#SparkFun_u-blox_GNSS
+
+#define DATAOUT 11      //MOSI
+#define DATAIN 12       //MISO
+#define SPICLOCK 6      //sck
+#define SPICS 10  //ss
+
 SFE_UBLOX_GNSS myGNSS;
 
 // First 3 here are boards w/radio BUILT-IN. Boards using FeatherWing follow.
@@ -97,12 +103,23 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 
 // Flag to set to payload or ground station mode
-bool groundStation = 1;
+bool groundStation = 0;
 
 // Variable to store NMEA string from GPS board
 String aprsMessageArray;
 
 void setup() {
+
+  SPI.begin();
+  
+  // Set SPI pin modes
+  pinMode(SPICLOCK, OUTPUT);
+  pinMode(DATAOUT, OUTPUT);
+  pinMode(DATAIN, INPUT);
+  pinMode(SPICS,OUTPUT);
+
+  digitalWrite(SPICS, HIGH); //disable device
+
 
   // Set the reset pin
   pinMode(RFM95_RST, OUTPUT);
@@ -162,6 +179,10 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 
 void loop() {
 
+  // Print the amount of free RAM at startup
+  //Serial.print("Free RAM: ");
+  //Serial.println(freeRam());
+
   // Run the HAB payload code if you're not a ground station
   if (groundStation == 0){
 
@@ -188,7 +209,7 @@ void loop() {
 // Calls function to send APRS message
 void runHAB() {
 
-   delay(250);
+   delay(5000);
    
    // Get NMEA messages from the I2C board to obtain position
    // getPosition();
@@ -232,7 +253,27 @@ void runHAB() {
 
       delay(10);
 
+       // Initialize SPI bus settings
+      SPI.beginTransaction(SPISettings(500000, MSBFIRST, SPI_MODE3));
+      
 
+    
+      // Write to CTRL_REG1 to take out of power down mode
+      digitalWrite(SPICS, LOW); //enable device
+      sendString("Hour: ");
+      sendFloat(myGNSS.getHour());
+      sendString("Minute: ");
+      sendFloat(myGNSS.getMinute());
+      sendString("Second: ");
+      sendFloat(myGNSS.getSecond());
+      sendString("Latitude: ");
+      sendFloat(myGNSS.getLatitude()/10000000.0);
+      sendString("Longitude: ");
+      sendFloat(myGNSS.getLongitude()/10000000.0);
+      sendString("Altitude: ");
+      sendFloat(myGNSS.getAltitude()/10000000.0);
+      digitalWrite(SPICS, HIGH);
+    
    }
 
 
@@ -318,50 +359,61 @@ void getPosition(){
 // Function that creates an APRS formatted messaage
 void createAPRSMessage(){
 
-  // Create APRS packet
-  String aprsMessage = "KC1ADC-11";
-  aprsMessage += ">APRS,WIDE2-1:";
-  aprsMessage += "/";
+    unsigned long startTime = millis();
+    
+    while (!myGNSS.getPVT())
+    {
+        if (millis() - startTime > 5000) // 5-second timeout
+        {
+            Serial.println("GNSS PVT request timed out.");
+            break;
+        }
+    }
 
-  if (myGNSS.getHour() < 10){
-    aprsMessage += 0; // Hour
-    aprsMessage += myGNSS.getHour(); // Hour
-  }
-  else{
-    aprsMessage += myGNSS.getHour(); // Hour
-  }
+    // Create APRS packet
+    String aprsMessage = "KC1ADC-11";
+    aprsMessage += ">APRS,WIDE2-1:";
+    aprsMessage += "/";
   
-  if (myGNSS.getMinute() < 10){
-    aprsMessage += 0; // Minute
-    aprsMessage += myGNSS.getMinute(); // Minute
-  }
-  else{
-    aprsMessage += myGNSS.getMinute(); // Minute
-  }
+    if (myGNSS.getHour() < 10){
+      aprsMessage += 0; // Hour
+      aprsMessage += myGNSS.getHour(); // Hour
+    }
+    else{
+      aprsMessage += myGNSS.getHour(); // Hour
+    }
+    
+    if (myGNSS.getMinute() < 10){
+      aprsMessage += 0; // Minute
+      aprsMessage += myGNSS.getMinute(); // Minute
+    }
+    else{
+      aprsMessage += myGNSS.getMinute(); // Minute
+    }
+    
+    aprsMessage += "h";
   
-  aprsMessage += "h";
-
-  aprsMessage += String(myGNSS.getLatitude()/10000000.0,6);
-  aprsMessage += "/";
-  aprsMessage += String(myGNSS.getLongitude()/10000000.0,6);
-  aprsMessage += "O";
-  aprsMessage += String(myGNSS.getHeading()/100000.0,3);
-  aprsMessage += "/";
-  aprsMessage += String((.001*myGNSS.getGroundSpeed())/.514444,3);
-  aprsMessage += "/";
-  aprsMessage += "A=";
-  aprsMessage += String(myGNSS.getAltitude()*0.00328084,6);
-
-  aprsMessageArray = aprsMessage.c_str();
+    aprsMessage += String(myGNSS.getLatitude()/10000000.0,6);
+    aprsMessage += "/";
+    aprsMessage += String(myGNSS.getLongitude()/10000000.0,6);
+    aprsMessage += "O";
+    aprsMessage += String(myGNSS.getHeading()/100000.0,3);
+    aprsMessage += "/";
+    aprsMessage += String((.001*myGNSS.getGroundSpeed())/.514444,3);
+    aprsMessage += "/";
+    aprsMessage += "A=";
+    aprsMessage += String(myGNSS.getAltitude()*0.00328084,6);
   
-  Serial.println();
-  Serial.println("======createAPRSMessage()=====");
-  Serial.print("APRS Message: ");
-  Serial.println(aprsMessageArray);
-  Serial.println("======createAPRSMessage()=====");
-  Serial.println();
-
-  sendAPRSMessage(aprsMessageArray);
+    aprsMessageArray = aprsMessage.c_str();
+    
+    Serial.println();
+    Serial.println("======createAPRSMessage()=====");
+    Serial.print("APRS Message: ");
+    Serial.println(aprsMessageArray);
+    Serial.println("======createAPRSMessage()=====");
+    Serial.println();
+  
+    sendAPRSMessage(aprsMessageArray);
 }
 
 
@@ -479,4 +531,32 @@ void parseAPRS(String message) {
   Serial.println(speed);
 
   delay(10);
+}
+
+void sendInt(int data) {
+  byte *dataPtr = (byte*)&data;
+  for (int i = 0; i < sizeof(data); i++) {
+    SPI.transfer(dataPtr[i]);
+  }
+}
+
+void sendFloat(float data) {
+  byte *dataPtr = (byte*)&data;
+  for (int i = 0; i < sizeof(data); i++) {
+    SPI.transfer(dataPtr[i]);
+  }
+}
+
+void sendString(String data) {
+  for (unsigned int i = 0; i < data.length(); i++) {
+    SPI.transfer(data[i]);
+  }
+  SPI.transfer('\0'); // Null terminator to signal the end of the string
+}
+
+extern "C" char* sbrk(int i);
+
+int freeRam() {
+  char stack_dummy = 0;
+  return &stack_dummy - sbrk(0);
 }
