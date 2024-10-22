@@ -30,16 +30,20 @@ class location():
       eSquared = e*e                   # Eccentricity squared
 
       N = []                           # Radius of curvature in prime vertical direction [meters]
-
+      
+      self.xECEF = []
+      self.yECEF = []
+      self.zECEF = []
+      
       # Loop through all locations
       for locationIndex in range(len(self.altitude)):
       
         # Calculate the value of N [meters]
         N.append(rEarth/math.sqrt(1 - eSquared*math.pow(math.sin(math.radians(self.latitude[locationIndex])),2)))   
-
+        
         # Calculate the ECEF coordinates
         ecef = navpy.lla2ecef(self.latitude[locationIndex], self.longitude[locationIndex], self.altitude[locationIndex])
-
+        
         # ECEF x-coordinate [meters]                                     # 
         self.xECEF.append(ecef[0])
 

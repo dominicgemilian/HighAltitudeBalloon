@@ -27,7 +27,7 @@ class ground_station:
         self.ser = serial.Serial(serial_num,9600)
         self.ser.flushInput()
 
-    def getGroundData(self): 
+    def getGroundData(self, debugFlag = False): 
 
         sys.stderr.write("getGroundData")
         bearing_flag = 0
@@ -36,6 +36,10 @@ class ground_station:
         while bearing_flag == 0 or ground_flag == 0:   
 
             msg = str(self.ser.readline())
+            
+            if (debugFlag):
+             print("=========================== Incoming PNT Message =========================")
+             print(msg)
 
             if msg.find("bearing") == 2:
 
@@ -118,13 +122,18 @@ class ground_station:
         return [HAB_lat, HAB_lon, HAB_alt, HAB_time]
 
     # This method drives the ground station
-    def moveGroundStation(self, groundStation, habPayload, bearing):
-    
-      [sourceLookENU, targetLookENU] = linkFunctions.calculateLookVectorENU(groundStation.location, habPayload.location)
+    def moveGroundStation(self, groundStation, habPayload, bearing, debugFlag = False):
+      
+      [sourceLookENU, targetLookENU] = linkFunctions.calculateLookVectorENU(groundStation.location, habPayload.location, True)
       [thetaSource, phiSource, thetaTarget, phiTarget] = linkFunctions.calculateSphericalAngles(sourceLookENU, targetLookENU, True)
 
       az = int(phiSource)
       el = int(thetaSource)
+     
+      if (debugFlag):
+       print("======================== PTU Pointing Angles ========================")
+       print("Az: ", az, " Degrees")
+       print("El: ", el, " Degrees")
 
       ser1 = serial.Serial("/dev/ttyUSB1")
       
