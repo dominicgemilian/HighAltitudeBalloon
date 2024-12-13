@@ -11,9 +11,9 @@ def main():
     print("Press Ctrl+C to exit")
     sys.stderr.write("Press Ctrl+C to exit\n")
     
-    node_usb = ground_station.ground_station(serial_num = "/dev/ttyUSB0")
-    node_s0 = ground_station.ground_station(serial_num = "/dev/ttyACM0")
-    node_rotor = ground_station.ground_station(serial_num = "/dev/ttyUSB1")
+    node_usb = ground_station.ground_station(serial_num = "/dev/ttyUSB0",baud_rate = 38400)
+    node_s0 = ground_station.ground_station(serial_num = "/dev/ttyACM0",baud_rate = 9600)
+    node_rotor = ground_station.ground_station(serial_num = "/dev/ttyUSB1",baud_rate = 9600)
 
     ptu_ready = 0
     
@@ -49,16 +49,18 @@ def main():
       groundStation.location.geodeticToECEF(True)
               
       try:
-       [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_s0.getHABData()
+       [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_s0.getHABData(True)
        habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
        habPayload.location.geodeticToECEF(True)
       except:
        print("Payload Message Failure")
-       HAB_alt = np.NaN
-       HAB_lat = np.NaN
-       HAB_lon = np.NaN
-       HAB_time = np.NaN
-
+       HAB_alt = 100000
+       HAB_lat = 1
+       HAB_lon = 0
+       HAB_time = 0
+       habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
+       habPayload.location.geodeticToECEF(True)
+      
       sys.stderr.write(f"HAB Alt: {HAB_alt}\n")
       sys.stderr.write(f"HAB Lat: {HAB_lat}\n") 
       sys.stderr.write(f"HAB Lon: {HAB_lon}\n") 
@@ -136,7 +138,10 @@ def main():
       
        try:
         print("PTU ready")
-        node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing))
+        if len(sys.argv) > 1 and sys.argv[1] == "debugPointing":
+         node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing), True, True)
+        else:
+         node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing))
        except:
         print("PTU failure")
         sys.stderr.write("PTU failure\n")
