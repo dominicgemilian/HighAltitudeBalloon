@@ -57,9 +57,7 @@ class ground_station:
                 
                 
                 ground_lat_str1 = msg.replace("b'Latitude: ", '')
-                print(ground_lat_str1)
                 ground_lat_str2 = ground_lat_str1.replace("\\r\\n'", '')
-                print(ground_lat_str2)
                 ground_lat = float(ground_lat_str2)
                 lat_flag = 1
 
