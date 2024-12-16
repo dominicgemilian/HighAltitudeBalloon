@@ -1,4 +1,3 @@
-
 import time 
 import serial 
 #import azimuth_elevation_angle as azel
@@ -42,39 +41,56 @@ class ground_station:
             if (debugFlag):
              print("=========================== Incoming PNT Message =========================")
              print(msg)
-             print(msg.find("Latitude"))
 
 
             if msg.find("bearing: ") != -1:
 
-                bearing_str1 = msg.replace("b'bearing: ", '')
-                bearing_str2 = bearing_str1.replace("\\r\\n'", '')
-                bearing = float(bearing_str2)
+                bearing_str = msg.replace("b'bearing: ", '')
+                bearing_str = bearing_str.replace("\\r\\n'", '')
+                bearing = float(bearing_str)
                 bearing_flag = 1
                 
 
             if msg.find("Latitude: ") != -1:
                 
                 
-                ground_lat_str1 = msg.replace("b'Latitude: ", '')
-                ground_lat_str2 = ground_lat_str1.replace("\\r\\n'", '')
-                ground_lat = float(ground_lat_str2)
+                ground_lat_str = msg.replace("b'Latitude: ", '')
+                ground_lat_str = ground_lat_str.replace("\\r\\n'", '')
+                ground_lat = float(ground_lat_str)
                 lat_flag = 1
 
             elif msg.find("Longitude: ") != -1:
                  
-                ground_lon_str1 = msg.replace("b'Longitude: ", '')
-                ground_lon_str2 = ground_lon_str1.replace("\\r\\n'", '')
-                ground_lon = float(ground_lon_str2)
+                ground_lon_str = msg.replace("b'Longitude: ", '')
+                ground_lon_str = ground_lon_str.replace("\\r\\n'", '')
+                ground_lon = float(ground_lon_str)
                 lon_flag = 1
                 
             elif msg.find("Altitude (meters): ") != -1:
 
-                ground_alt_str1 = msg.replace("b'Altitude (meters): ", '')
-                ground_alt_str2 = ground_alt_str1.replace("\\r\\n'", '')
-                ground_alt = float(ground_alt_str2)
+                ground_alt_str = msg.replace("b'Altitude (meters): ", '')
+                ground_alt_str = ground_alt_str.replace("\\r\\n'", '')
+                ground_alt = float(ground_alt_str)
                 alt_flag = 1              
+
+            if debugFlag:
+		
+                if bearing_flag == 1:
+             		
+                    print("Bearing: ", str(bearing), " degrees")
                 
+                if lat_flag == 1:
+	
+                    print("Latitude: ", str(ground_lat), " degrees")
+
+                if lon_flag == 1:
+
+                    print("Longitude: ", str(ground_lon), " degrees")
+
+                if alt_flag == 1:
+
+                    print("Altitude" , ground_alt, " meters")
+
         return [ground_lat, ground_lon, ground_alt, bearing]
 
     # This method returns relevant HAB data
@@ -87,42 +103,71 @@ class ground_station:
         lon_flag = 0
 
         while time_flag == 0 or alt_flag == 0 or lat_flag == 0 or lon_flag == 0:   
+                       
             msg = str(self.ser.readline())
+            
+            #atafile = open('output.txt', 'a')
+            #now = datetime.now()
+            #date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+            #log_msg = date_time + "," + msg + "\n"
+            #datafile.write(log_msg)
+            #datafile.close()
+                        
             if (debugFlag):
+             print("=========================== Incoming PNT Message =========================")
              print(msg)
-            datafile = open('output.txt', 'a')
-            now = datetime.now()
-            date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-            log_msg = date_time + "," + msg + "\n"
-            datafile.write(log_msg)
-            datafile.close()
 
-            if msg.find("time") == 2:
 
-                HAB_time = msg[8:12]
+            if msg.find("time: ") != -1:
+
+                time_str = msg.replace("b'time: ", '')
+                time_str = time_str.replace("\\r\\n'", '')
+                time = float(time_str)
                 time_flag = 1
                 
 
-            if msg.find("alt") == 2:
-
-                HAB_alt = msg[7:15]
-                alt_flag = 1
-
-            if msg.find("lat") == 2:
-
-                HAB_lat = msg[7:16]
-                size = len(HAB_lat)
-                HAB_lat = float(HAB_lat)
+            if msg.find("Latitude: ") != -1:
+                
+                
+                hab_lat_str = msg.replace("b'Latitude: ", '')
+                hab_lat_str = hab_lat_str.replace("\\r\\n'", '')
+                hab_lat = float(hab_lat_str)
                 lat_flag = 1
 
-            if msg.find("lon") == 2:
-
-                HAB_lon = msg[7:16]
-                size = len(HAB_lon)
-                HAB_lon = float(HAB_lon)
+            elif msg.find("Longitude: ") != -1:
+                 
+                hab_lon_str = msg.replace("b'Longitude: ", '')
+                hab_lon_str = hab_lon_str.replace("\\r\\n'", '')
+                hab_lon = float(hab_lon_str)
                 lon_flag = 1
                 
-        return [HAB_lat, HAB_lon, HAB_alt, HAB_time]
+            elif msg.find("Altitude (meters): ") != -1:
+
+                hab_alt_str = msg.replace("b'Altitude (meters): ", '')
+                hab_alt_str = hab_alt_str.replace("\\r\\n'", '')
+                hab_alt = float(hab_alt_str)
+                alt_flag = 1              
+
+            if debugFlag:
+		
+                if time_flag == 1:
+             		
+                    print("Time: ", str(time), " UTC")
+                
+                if lat_flag == 1:
+	
+                    print("Latitude: ", str(hab_lat), " degrees")
+
+                if lon_flag == 1:
+
+                    print("Longitude: ", str(hab_lon), " degrees")
+
+                if alt_flag == 1:
+
+                    print("Altitude: " , hab_alt, " meters")
+
+        return [hab_lat, hab_lon, hab_alt, bearing]
+
 
     # This method drives the ground station
     def moveGroundStation(self, groundStation, habPayload, bearing, debugFlag = False, noSerial = False):
