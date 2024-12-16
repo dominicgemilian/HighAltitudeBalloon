@@ -103,7 +103,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 
 // Flag to set to payload or ground station mode
-bool groundStation = 0;
+bool groundStation = 1;
 
 // Variable to store NMEA string from GPS board
 String aprsMessageArray;
@@ -392,10 +392,33 @@ void createAPRSMessage(){
     }
     
     aprsMessage += "h";
-  
-    aprsMessage += String(myGNSS.getLatitude()/10000000.0,6);
+
+    double lat = myGNSS.getLatitude()/10000000.0;
+
+    if (lat >= 0){
+      aprsMessage += String(lat,6);
+      aprsMessage += "N";
+    }
+
+    else{
+      aprsMessage += String(-1*lat,6);
+      aprsMessage += "S";
+    }
+    
     aprsMessage += "/";
-    aprsMessage += String(myGNSS.getLongitude()/10000000.0,6);
+    
+    double lon = myGNSS.getLongitude()/10000000.0;
+
+    if (lon >= 0){
+      aprsMessage += String(lon,6);
+      aprsMessage += "E";
+    }
+
+    else{
+      aprsMessage += String(-1*lon,6);
+      aprsMessage += "W";
+    }
+    
     aprsMessage += "O";
     aprsMessage += String(myGNSS.getHeading()/100000.0,3);
     aprsMessage += "/";
@@ -429,7 +452,6 @@ void sendAPRSMessage(String aprsMessageArray) {
     aprsMessageRF95[i] = (uint8_t) aprsMessageArray[i];
   }
 
-  
   rf95.send(aprsMessageRF95, sizeof(aprsMessageRF95));
   rf95.waitPacketSent();
 }
@@ -489,18 +511,32 @@ void parseAPRS(String message) {
   // Check for the position of ':' (start of position report) and 'z' (timestamp)
   int latStartPos = message.indexOf("h") + 1;
   int latEndPos = latStartPos + 9;
-  
+
   String latitude = message.substring(latStartPos, latEndPos);
+  String latHemi = message.substring(latEndPos,latEndPos + 1);
+
+  if (latHemi == "S"){
+   String latPol = "-";
+   latPol += latitude;
+   latitude = latPol;    
+  }
 
   // Check for the position of ':' (start of position report) and 'z' (timestamp)
   int lonStartPos = latEndPos + 2;
   int lonEndPos = lonStartPos + 9;
   
   String longitude = message.substring(lonStartPos, lonEndPos);
+  String lonHemi = message.substring(lonEndPos,lonEndPos + 1);
+
+  if (lonHemi == "W"){
+   String lonPol = "-";
+   lonPol += longitude;
+   longitude = lonPol;
+  }
 
   // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int headingStartPos = lonEndPos + 1;
-  int headingEndPos = headingStartPos + 6;
+  int headingStartPos = message.indexOf("O") + 1;
+  int headingEndPos = headingStartPos + 5;
   
   String heading = message.substring(headingStartPos, headingEndPos);
 
@@ -511,8 +547,9 @@ void parseAPRS(String message) {
   String speed = message.substring(speedStartPos, speedEndPos);
 
   // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int altStartPos = speedEndPos + 3;
-  int altEndPos = altStartPos + 11;
+
+  int altStartPos = message.indexOf("=") + 1;
+  int altEndPos = message.length() - 1;
   
   String altitude = message.substring(altStartPos, altEndPos);
   
@@ -525,10 +562,10 @@ void parseAPRS(String message) {
   Serial.println(longitude);
   Serial.print("alt: ");
   Serial.println(altitude);
-  Serial.print("heading: ");
-  Serial.println(heading);
-  Serial.print("speed: ");
-  Serial.println(speed);
+  //Serial.print("heading: ");
+  //Serial.println(heading);
+  //Serial.print("speed: ");
+  //Serial.println(speed);
 
   delay(10);
 }
