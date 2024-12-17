@@ -101,7 +101,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 TinyGPSPlus gps;
 
 // Flag to set to payload or ground station mode
-bool groundStation = 1;
+bool groundStation = 0;
 
 // Variable to store NMEA string from GPS board
 String aprsMessageArray;
@@ -250,7 +250,7 @@ void runHAB() {
       Serial.print("Altitude (meters): ");
       Serial.println(myGNSS.getAltitude()*0.00328084, 6);
       //int32_t altitude = myGNSS.getAltitude(1100);
-      double altitude = myGNSS.getAltitude();
+      double altitude = myGNSS.getAltitude()*0.00328084;
       String alt_str = String(altitude, 6);
       String alt = "Altitude (meters): " + alt_str;
       const uint8_t* alt_data = (const uint8_t*)alt.c_str();
