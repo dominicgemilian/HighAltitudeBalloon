@@ -30,7 +30,7 @@ void loop() {
   // Read GPS data and process it
   while (Serial.available() > 0) {
     char c = Serial.read();
-    Serial.print(c);
+    //Serialln.print(c);
     gps.encode(c); // Feed the GPS data to TinyGPS++
 
     if (gps.location.isUpdated()) {
@@ -49,14 +49,11 @@ void loop() {
     }
 
   }
-
-  Serial.println();
+     
   Serial.print("Number of satellites acquired: ");
   Serial.println(gps.satellites.value());
   Serial.print("HDOP: ");
   Serial.println(gps.hdop.value());
-  Serial.print("Lat: ");
-  Serial.println(gps.location.lat(),6);
    
   delay(100);
   
