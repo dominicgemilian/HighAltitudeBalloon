@@ -240,22 +240,26 @@ void runHAB() {
       const uint8_t* lat_data = (const uint8_t*)lat.c_str();
       rf95.send(lat_data, lat.length());
       rf95.waitPacketSent();
+
+      
       Serial.print("Longitude: ");
       Serial.println(myGNSS.getLongitude()/10000000.0, 6);
       double longitude = myGNSS.getLongitude()/10000000.0;
       String lon_str = String(longitude, 6);
       String lon = "Longitude: " + lon_str;
       const uint8_t* lon_data = (const uint8_t*)lon.c_str();
+      rf95.send(lon_data, lon.length());
       rf95.waitPacketSent();
-      Serial.print("Altitude (meters): ");
-      Serial.println(myGNSS.getAltitude()*0.00328084, 6);
-      //int32_t altitude = myGNSS.getAltitude(1100);
-      double altitude = myGNSS.getAltitude()*0.00328084;
+      
+      Serial.print("Altitude (kilometers): ");
+      Serial.println(myGNSS.getAltitude(), 6);
+      double altitude = myGNSS.getAltitude();
       String alt_str = String(altitude, 6);
-      String alt = "Altitude (meters): " + alt_str;
+      String alt = "Altitude (kilometers): " + alt_str;
       const uint8_t* alt_data = (const uint8_t*)alt.c_str();
-      rf95.send(alt_data, alt.length());
+      rf95.send((const uint8_t*) alt_data, alt.length());
       rf95.waitPacketSent();
+      
       Serial.println("=================Run HAB================");
       Serial.println("");
 
