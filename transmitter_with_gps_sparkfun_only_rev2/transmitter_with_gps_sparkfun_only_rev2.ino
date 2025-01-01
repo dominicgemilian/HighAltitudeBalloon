@@ -98,12 +98,10 @@ SFE_UBLOX_GNSS myGNSS;
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-// TinyGPSPlus gps;
-
-
+TinyGPSPlus gps;
 
 // Flag to set to payload or ground station mode
-bool groundStation = 1;
+bool groundStation = 0;
 
 // Variable to store NMEA string from GPS board
 String aprsMessageArray;
@@ -234,20 +232,34 @@ void runHAB() {
 
       delay(10);
 
-      // Create an APRS message
-      createAPRSMessage();
-
-      // Send the APRS message over LoRA
-      //sendAPRSMessage(aprsMessageArray);
-
-      delay(10);
-
       Serial.print("Latitude: ");
       Serial.println(myGNSS.getLatitude()/10000000.0, 6);
+      double latitude = myGNSS.getLatitude()/10000000.0;
+      String lat_str = String(latitude, 6);
+      String lat = "Latitude: " + lat_str;
+      const uint8_t* lat_data = (const uint8_t*)lat.c_str();
+      rf95.send(lat_data, lat.length());
+      rf95.waitPacketSent();
+
+      
       Serial.print("Longitude: ");
       Serial.println(myGNSS.getLongitude()/10000000.0, 6);
-      Serial.print("Altitude: ");
-      Serial.println(myGNSS.getAltitude()*0.00328084, 6);
+      double longitude = myGNSS.getLongitude()/10000000.0;
+      String lon_str = String(longitude, 6);
+      String lon = "Longitude: " + lon_str;
+      const uint8_t* lon_data = (const uint8_t*)lon.c_str();
+      rf95.send(lon_data, lon.length());
+      rf95.waitPacketSent();
+      
+      Serial.print("Altitude (kilometers): ");
+      Serial.println(myGNSS.getAltitude(), 6);
+      double altitude = myGNSS.getAltitude();
+      String alt_str = String(altitude, 6);
+      String alt = "Altitude (kilometers): " + alt_str;
+      const uint8_t* alt_data = (const uint8_t*)alt.c_str();
+      rf95.send((const uint8_t*) alt_data, alt.length());
+      rf95.waitPacketSent();
+      
       Serial.println("=================Run HAB================");
       Serial.println("");
 
@@ -255,25 +267,7 @@ void runHAB() {
 
        // Initialize SPI bus settings
       SPI.beginTransaction(SPISettings(500000, MSBFIRST, SPI_MODE3));
-      
-
-    
-      // Write to CTRL_REG1 to take out of power down mode
-      digitalWrite(SPICS, LOW); //enable device
-      sendString("Hour: ");
-      sendFloat(myGNSS.getHour());
-      sendString("Minute: ");
-      sendFloat(myGNSS.getMinute());
-      sendString("Second: ");
-      sendFloat(myGNSS.getSecond());
-      sendString("Latitude: ");
-      sendFloat(myGNSS.getLatitude()/10000000.0);
-      sendString("Longitude: ");
-      sendFloat(myGNSS.getLongitude()/10000000.0);
-      sendString("Altitude: ");
-      sendFloat(myGNSS.getAltitude()/10000000.0);
-      digitalWrite(SPICS, HIGH);
-    
+         
    }
 
 
@@ -356,114 +350,10 @@ void getPosition(){
 }
 
 
-// Function that creates an APRS formatted messaage
-void createAPRSMessage(){
-
-    unsigned long startTime = millis();
-    
-    while (!myGNSS.getPVT())
-    {
-        if (millis() - startTime > 5000) // 5-second timeout
-        {
-            Serial.println("GNSS PVT request timed out.");
-            break;
-        }
-    }
-
-    // Create APRS packet
-    String aprsMessage = "KC1ADC-11";
-    aprsMessage += ">APRS,WIDE2-1:";
-    aprsMessage += "/";
-  
-    if (myGNSS.getHour() < 10){
-      aprsMessage += 0; // Hour
-      aprsMessage += myGNSS.getHour(); // Hour
-    }
-    else{
-      aprsMessage += myGNSS.getHour(); // Hour
-    }
-    
-    if (myGNSS.getMinute() < 10){
-      aprsMessage += 0; // Minute
-      aprsMessage += myGNSS.getMinute(); // Minute
-    }
-    else{
-      aprsMessage += myGNSS.getMinute(); // Minute
-    }
-    
-    aprsMessage += "h";
-
-    double lat = myGNSS.getLatitude()/10000000.0;
-
-    if (lat >= 0){
-      aprsMessage += String(lat,6);
-      aprsMessage += "N";
-    }
-
-    else{
-      aprsMessage += String(-1*lat,6);
-      aprsMessage += "S";
-    }
-    
-    aprsMessage += "/";
-    
-    double lon = myGNSS.getLongitude()/10000000.0;
-
-    if (lon >= 0){
-      aprsMessage += String(lon,6);
-      aprsMessage += "E";
-    }
-
-    else{
-      aprsMessage += String(-1*lon,6);
-      aprsMessage += "W";
-    }
-    
-    aprsMessage += "O";
-    aprsMessage += String(myGNSS.getHeading()/100000.0,3);
-    aprsMessage += "/";
-    aprsMessage += String((.001*myGNSS.getGroundSpeed())/.514444,3);
-    aprsMessage += "/";
-    aprsMessage += "A=";
-    aprsMessage += String(myGNSS.getAltitude()*0.00328084,6);
-  
-    aprsMessageArray = aprsMessage.c_str();
-    
-    Serial.println();
-    Serial.println("======createAPRSMessage()=====");
-    Serial.print("APRS Message: ");
-    Serial.println(aprsMessageArray);
-    Serial.println("======createAPRSMessage()=====");
-    Serial.println();
-  
-    sendAPRSMessage(aprsMessageArray);
-}
-
-
-// Function that sends APRS formatted message over LoRa
-void sendAPRSMessage(String aprsMessageArray) {
-
-  // Create a uint8_t array to hold the ASCII values of the string characters
-  int length = aprsMessageArray.length();
-  uint8_t aprsMessageRF95[length + 1]; // +1 for the null terminator
-
-  // Convert the string to uint8_t array
-  for (int i = 0; i < length; i++) {
-    aprsMessageRF95[i] = (uint8_t) aprsMessageArray[i];
-  }
-
-  rf95.send(aprsMessageRF95, sizeof(aprsMessageRF95));
-  rf95.waitPacketSent();
-}
-
-String inputData = "";  // Variable to store incoming APRS packet
-bool newData = false;
-
 void loraReceive(){
 
   // Read data from serial
   while (rf95.available() > 0) {
-
 
     // Should be a message for us now
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -478,122 +368,7 @@ void loraReceive(){
       //Serial.print("RSSI: ");
       //Serial.println(rf95.lastRssi(), DEC);
     }
-    
-    inputData = (char*) buf;
-
-    newData = true;
-   
+       
   }
 
-
-  // Parse APRS packet
-  if (newData) {
-  
-
-    parseAPRS(inputData);
-
-    // Reset input data
-    inputData = "";
-    newData = false;
-  }
-
-
-}
-
-// Function to parse APRS packet
-void parseAPRS(String message) {
- 
-  int timeStartPos = message.indexOf(":") + 2;
-  int timeEndPos = timeStartPos + 4;
-  
-  String time = message.substring(timeStartPos, timeEndPos);
-
-  // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int latStartPos = message.indexOf("h") + 1;
-  int latEndPos = latStartPos + 9;
-
-  String latitude = message.substring(latStartPos, latEndPos);
-  String latHemi = message.substring(latEndPos,latEndPos + 1);
-
-  if (latHemi == "S"){
-   String latPol = "-";
-   latPol += latitude;
-   latitude = latPol;    
-  }
-
-  // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int lonStartPos = latEndPos + 2;
-  int lonEndPos = lonStartPos + 9;
-  
-  String longitude = message.substring(lonStartPos, lonEndPos);
-  String lonHemi = message.substring(lonEndPos,lonEndPos + 1);
-
-  if (lonHemi == "W"){
-   String lonPol = "-";
-   lonPol += longitude;
-   longitude = lonPol;
-  }
-
-  // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int headingStartPos = message.indexOf("O") + 1;
-  int headingEndPos = headingStartPos + 5;
-  
-  String heading = message.substring(headingStartPos, headingEndPos);
-
-  // Check for the position of ':' (start of position report) and 'z' (timestamp)
-  int speedStartPos = headingEndPos + 2;
-  int speedEndPos = speedStartPos + 5;
-  
-  String speed = message.substring(speedStartPos, speedEndPos);
-
-  // Check for the position of ':' (start of position report) and 'z' (timestamp)
-
-  int altStartPos = message.indexOf("=") + 1;
-  int altEndPos = message.length() - 1;
-  
-  String altitude = message.substring(altStartPos, altEndPos);
-  
-  // Print parsed data
-  Serial.print("time: ");
-  Serial.println(time);
-  Serial.print("lat: ");
-  Serial.println(latitude);
-  Serial.print("lon: ");
-  Serial.println(longitude);
-  Serial.print("alt: ");
-  Serial.println(altitude);
-  //Serial.print("heading: ");
-  //Serial.println(heading);
-  //Serial.print("speed: ");
-  //Serial.println(speed);
-
-  delay(10);
-}
-
-void sendInt(int data) {
-  byte *dataPtr = (byte*)&data;
-  for (int i = 0; i < sizeof(data); i++) {
-    SPI.transfer(dataPtr[i]);
-  }
-}
-
-void sendFloat(float data) {
-  byte *dataPtr = (byte*)&data;
-  for (int i = 0; i < sizeof(data); i++) {
-    SPI.transfer(dataPtr[i]);
-  }
-}
-
-void sendString(String data) {
-  for (unsigned int i = 0; i < data.length(); i++) {
-    SPI.transfer(data[i]);
-  }
-  SPI.transfer('\0'); // Null terminator to signal the end of the string
-}
-
-extern "C" char* sbrk(int i);
-
-int freeRam() {
-  char stack_dummy = 0;
-  return &stack_dummy - sbrk(0);
 }
