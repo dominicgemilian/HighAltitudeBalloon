@@ -141,11 +141,11 @@ class ground_station:
                 hab_lon = float(hab_lon_str)
                 lon_flag = 1
                 
-            elif msg.find("Altitude (meters): ") != -1:
+            elif msg.find("Altitude (kilometers): ") != -1:
 
-                hab_alt_str = msg.replace("b'Altitude (meters): ", '')
+                hab_alt_str = msg.replace("b'Altitude (kilometers): ", '')
                 hab_alt_str = hab_alt_str.replace("\\r\\n'", '')
-                hab_alt = float(hab_alt_str)
+                hab_alt = float(hab_alt_str)/1000
                 alt_flag = 1              
 
             if debugFlag:
