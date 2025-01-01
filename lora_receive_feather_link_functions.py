@@ -11,7 +11,7 @@ def main():
     print("Press Ctrl+C to exit")
     sys.stderr.write("Press Ctrl+C to exit\n")
     
-    node_ground_station = ground_station.ground_station(serial_num = "/dev/ttyUSB1",baud_rate = 38400)
+    node_ground_station = ground_station.ground_station(serial_num = "/dev/ttyUSB1",baud_rate = 115200)
     node_payload = ground_station.ground_station(serial_num = "/dev/ttyACM0",baud_rate = 9600)
     node_rotor = ground_station.ground_station(serial_num = "/dev/ttyUSB0",baud_rate = 9600)
 
@@ -64,7 +64,6 @@ def main():
       sys.stderr.write(f"Ground Alt: {ground_alt}\n")
       sys.stderr.write(f"Ground Lat: {ground_lat}\n")
       sys.stderr.write(f"Ground Lon: {ground_lon}\n")
-      sys.stderr.write(f"Ground Time: {ground_time}\n")
 
      else:
        
