@@ -28,7 +28,7 @@ class ground_station:
 
     def getGroundData(self, debugFlag = False): 
 
-        sys.stderr.write("getGroundData")
+        print("getGroundData")
         bearing_flag = 0
         lat_flag = 0
         lon_flag = 0
@@ -37,7 +37,7 @@ class ground_station:
         while bearing_flag == 0 or lat_flag == 0 or lon_flag == 0 or alt_flag == 0:   
 
             msg = str(self.ser.readline())
-                        
+
             if (debugFlag):
              print("=========================== Incoming PNT Message =========================")
              print(msg)
@@ -89,7 +89,7 @@ class ground_station:
 
                 if alt_flag == 1:
 
-                    print("Altitude" , ground_alt, " meters")
+                    print("Altitude: " , ground_alt, " meters")
 
         return [ground_lat, ground_lon, ground_alt, bearing]
 

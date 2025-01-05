@@ -66,9 +66,8 @@ def main():
       sys.stderr.write(f"Ground Lon: {ground_lon}\n")
 
      else:
-       
+              
       try:
-        
        [ground_lat, ground_lon, ground_alt, ground_bearing] = node_ground_station.getGroundData()
        groundStation.location.updateLocation([float(ground_lat)],[float(ground_lon)],[float(ground_alt)])
        groundStation.location.geodeticToECEF(False)
@@ -85,8 +84,7 @@ def main():
         
       try:
          
-       [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData(True)
-       print("test1")
+       [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData()
        habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
        habPayload.location.geodeticToECEF(False)
        sys.stderr.write(f"HAB Lat: {HAB_lat}\n") 
@@ -94,7 +92,6 @@ def main():
        sys.stderr.write(f"HAB Alt: {HAB_alt}\n")
        sys.stderr.write(f"HAB Time: {HAB_time}\n") 
        ptu_ready = 1
-        
       except:
          
        print("Payload Message Failure")
