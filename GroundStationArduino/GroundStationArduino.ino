@@ -8,7 +8,7 @@ ICM_20948_I2C myICM;
 TinyGPSPlus gps; // Create a TinyGPS++ object
 
 void setup() {
-  Serial.begin(38400);
+  Serial.begin(115200);
   while (!Serial);
 
   Serial.println("ICM-20948 Bearing and Neo M9N GPS Example");
@@ -33,31 +33,43 @@ void loop() {
     Serial.print(c);
     gps.encode(c); // Feed the GPS data to TinyGPS++
 
-    if (gps.location.isUpdated()) {
-      Serial.print("Latitude: ");
-      Serial.println(gps.location.lat(), 6);
-      Serial.print("Longitude: ");
-      Serial.println(gps.location.lng(), 6);
-      Serial.print("Altitude (meters): ");
-      Serial.println(gps.altitude.meters());
-      Serial.print("Time (UTC): ");
-      Serial.print(gps.time.hour());
-      Serial.print(":");
-      Serial.print(gps.time.minute());
-      Serial.print(":");
-      Serial.println(gps.time.second());
-    }
+//    if (gps.location.isUpdated()) {
+//      Serial.print("Latitude: ");
+//      Serial.println(gps.location.lat(), 6);
+//      Serial.print("Longitude: ");
+//      Serial.println(gps.location.lng(), 6);
+//      Serial.print("Altitude (meters): ");
+//      Serial.println(gps.altitude.meters());
+//      Serial.print("Time (UTC): ");
+//      Serial.print(gps.time.hour());
+//      Serial.print(":");
+//      Serial.print(gps.time.minute());
+//      Serial.print(":");
+//      Serial.println(gps.time.second());
+//    }
 
   }
 
+  Serial.println();
+
+  delay(100);
   Serial.println("");
   Serial.print("Number of satellites acquired: ");
   Serial.println(gps.satellites.value());
   Serial.print("HDOP: ");
   Serial.println(gps.hdop.value());
-  Serial.print("Lat: ");
-  Serial.println(gps.location.lat(),6);
-   
+  Serial.print("Latitude: ");
+  Serial.println(gps.location.lat(), 6);
+  Serial.print("Longitude: ");
+  Serial.println(gps.location.lng(), 6);
+  Serial.print("Altitude (meters): ");
+  Serial.println(gps.altitude.meters());
+  Serial.print("Time (UTC): ");
+  Serial.print(gps.time.hour());
+  Serial.print(":");
+  Serial.print(gps.time.minute());
+  Serial.print(":");
+  Serial.println(gps.time.second());
   delay(100);
   
   // Update the sensor data
