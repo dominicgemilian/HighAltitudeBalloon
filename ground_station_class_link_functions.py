@@ -118,9 +118,9 @@ class ground_station:
              print(msg)
 
 
-            if msg.find("time: ") != -1:
+            if msg.find("Unix Time: ") != -1:
 
-                time_str = msg.replace("b'time: ", '')
+                time_str = msg.replace("b'Unix Time: ", '')
                 time_str = time_str.replace("\\r\\n'", '')
                 time = float(time_str)
                 time_flag = 1
@@ -152,7 +152,7 @@ class ground_station:
 		
                 if time_flag == 1:
              		
-                    print("Time: ", str(time), " UTC")
+                    print("Time: ", str(time))
                 
                 if lat_flag == 1:
 	
@@ -166,7 +166,7 @@ class ground_station:
 
                     print("Altitude: " , hab_alt, " meters")
 
-        return [hab_lat, hab_lon, hab_alt, bearing]
+        return [hab_lat, hab_lon, hab_alt, time]
 
 
     # This method drives the ground station

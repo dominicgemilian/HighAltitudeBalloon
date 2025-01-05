@@ -43,8 +43,8 @@ def main():
               
       try:
        [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData(True)
-       #habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
-       #habPayload.location.geodeticToECEF(False)
+       habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
+       habPayload.location.geodeticToECEF(False)
        sys.stderr.write(f"HAB Alt: {HAB_alt}\n")
        sys.stderr.write(f"HAB Lat: {HAB_lat}\n") 
        sys.stderr.write(f"HAB Lon: {HAB_lon}\n") 
@@ -82,23 +82,23 @@ def main():
        sys.stderr.write("Ground station failure\n")
        ptu_ready = 0
      
-      if node_payload.ser.inWaiting() > 20:
         
-       try:
+      try:
          
-        [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData()
-        habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
-        habPayload.location.geodeticToECEF(False)
-        sys.stderr.write(f"HAB Lat: {HAB_lat}\n") 
-        sys.stderr.write(f"HAB Lon: {HAB_lon}\n")
-        sys.stderr.write(f"HAB Alt: {HAB_alt}\n")
-        sys.stderr.write(f"HAB Time: {HAB_time}\n") 
-        ptu_ready = 1
+       [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData(True)
+       print("test1")
+       habPayload.location.updateLocation([float(HAB_lat)],[float(HAB_lon)],[float(HAB_alt)])
+       habPayload.location.geodeticToECEF(False)
+       sys.stderr.write(f"HAB Lat: {HAB_lat}\n") 
+       sys.stderr.write(f"HAB Lon: {HAB_lon}\n")
+       sys.stderr.write(f"HAB Alt: {HAB_alt}\n")
+       sys.stderr.write(f"HAB Time: {HAB_time}\n") 
+       ptu_ready = 1
         
-       except:
+      except:
          
-        print("Payload Message Failure")
-        ptu_ready = 0
+       print("Payload Message Failure")
+       ptu_ready = 0
     
       if ptu_ready == 1:
       
