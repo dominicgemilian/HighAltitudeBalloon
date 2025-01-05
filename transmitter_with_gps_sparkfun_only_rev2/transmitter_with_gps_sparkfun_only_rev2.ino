@@ -220,17 +220,15 @@ void runHAB() {
       Serial.println("");
       Serial.println("=================Run HAB================");
 
-      // Print time in UTC (Coordinated Universal Time)
-      Serial.print("UTC Time: ");
-      Serial.print(myGNSS.getHour());   // Hour (0-23)
-      Serial.print(":");
-      Serial.print(myGNSS.getMinute()); // Minute (0-59)
-      Serial.print(":");
-      Serial.print(myGNSS.getSecond()); // Second (0-59)
-      Serial.print(".");
-      Serial.println(myGNSS.getMillisecond()/10); // Centisecond (0-99)
-
-      delay(10);
+      // Print time 
+      Serial.print("Unix Time: ");
+      Serial.println(myGNSS.getUnixEpoch());
+      double time = myGNSS.getUnixEpoch();
+      String time_str = String(time, 0);
+      String time_unix = "Unix Time: " + time_str;
+      const uint8_t* time_data = (const uint8_t*)time_unix.c_str();
+      rf95.send(time_data, time_unix.length());
+      rf95.waitPacketSent();
 
       Serial.print("Latitude: ");
       Serial.println(myGNSS.getLatitude()/10000000.0, 6);
@@ -251,7 +249,7 @@ void runHAB() {
       rf95.send(lon_data, lon.length());
       rf95.waitPacketSent();
       
-      Serial.print("Altitude (kilometers): ");
+      Serial.print("Altitude (mm): ");
       Serial.println(myGNSS.getAltitude(), 6);
       double altitude = myGNSS.getAltitude();
       String alt_str = String(altitude, 6);
