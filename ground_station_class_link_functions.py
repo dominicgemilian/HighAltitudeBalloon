@@ -175,7 +175,7 @@ class ground_station:
       [sourceLookENU, targetLookENU] = linkFunctions.calculateLookVectorENU(groundStation.location, habPayload.location, True)
       [thetaSource, phiSource, thetaTarget, phiTarget] = linkFunctions.calculateSphericalAngles(sourceLookENU, targetLookENU, True)
 
-      az = int(phiSource)
+      az = (int(phiSource) - int(bearing))%360
       el = int(thetaSource)
      
       if (debugFlag):

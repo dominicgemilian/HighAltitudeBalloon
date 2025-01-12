@@ -166,7 +166,7 @@ def calculateSphericalAngles(sourceLookVectorENU, targetLookVectorNED, debugFlag
         for j in range(0, sizeTarget):
 
             # Calculate the magnitude of the NED vector
-            rNED = np.sqrt(targetLookVectorNED[0][0][0]**2 + targetLookVectorNED[i][j][1]**2 + targetLookVectorNED[i][j][2]**2)
+            rNED = np.sqrt(targetLookVectorNED[i][j][0]**2 + targetLookVectorNED[i][j][1]**2 + targetLookVectorNED[i][j][2]**2)
             
             # Calculate theta (inclination angle)
             thetaNED = np.arccos(targetLookVectorNED[i][j][2] / rNED)

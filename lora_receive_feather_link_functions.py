@@ -19,27 +19,25 @@ def main():
     
     groundStation = terminal.terminal()
     habPayload = terminal.terminal()
+    
+    loop = True
 
-    while True:    
+    while loop == True:    
 
      print("Waiting for incoming data.")
 
-     if len(sys.argv) > 1 and sys.argv[1] == "debugPTU":
-
+     if len(sys.argv) > 1 and sys.argv[1] == "debugPointingCalc":
+      print(float(sys.argv[2]))
       groundStation.location.updateLocation([float(sys.argv[2])],[float(sys.argv[3])],[float(sys.argv[4])])
       groundStation.location.geodeticToECEF(True)
 
       habPayload.location.updateLocation([float(sys.argv[6])],[float(sys.argv[7])],[float(sys.argv[8])])
       habPayload.location.geodeticToECEF(True)
-
-      ptu_ready = 1
-
-      if ptu_ready == 1:
-        
-       node_rotor.moveGroundStation(groundStation, habPayload, float(sys.argv[5]), True)
-
-
-     if len(sys.argv) > 1 and sys.argv[1] == "debugPayload":
+      
+      node_rotor.moveGroundStation(groundStation, habPayload, float(sys.argv[5]), True, True)
+      loop = False
+      
+     elif len(sys.argv) > 1 and sys.argv[1] == "debugPayload":
               
       try:
        [HAB_lat, HAB_lon, HAB_alt, HAB_time] = node_payload.getHABData(True)
@@ -101,13 +99,12 @@ def main():
       
        try:
         print("PTU ready")
-        if len(sys.argv) > 1 and sys.argv[1] == "debugPointing":
+        if len(sys.argv) > 1 and sys.argv[1] == "debugPointingCalcGroundTest":
          node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing), True, True)
         else:
          node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing))
        except:
-        print("PTU failure")
-        sys.stderr.write("PTU failure\n")
+        print("Error on attempt to move ground station likely due to unavailable PTU serial port.")
 
 if __name__=="__main__":
     main()
