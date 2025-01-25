@@ -30,11 +30,9 @@ class ground_station:
 
         print("getGroundData")
         bearing_flag = 0
-        lat_flag = 0
-        lon_flag = 0
-        alt_flag = 0
+        position_flag = 0
         
-        while bearing_flag == 0 or lat_flag == 0 or lon_flag == 0 or alt_flag == 0:   
+        while bearing_flag == 0 or position_flag == 0:   
 
             msg = str(self.ser.readline())
 
@@ -51,27 +49,13 @@ class ground_station:
                 bearing_flag = 1
                 
 
-            if msg.find("Latitude: ") != -1:
-                
-                
-                ground_lat_str = msg.replace("b'Latitude: ", '')
-                ground_lat_str = ground_lat_str.replace("\\r\\n'", '')
-                ground_lat = float(ground_lat_str)
-                lat_flag = 1
-
-            elif msg.find("Longitude: ") != -1:
-                 
-                ground_lon_str = msg.replace("b'Longitude: ", '')
-                ground_lon_str = ground_lon_str.replace("\\r\\n'", '')
-                ground_lon = float(ground_lon_str)
-                lon_flag = 1
-                
-            elif msg.find("Altitude (meters): ") != -1:
-
-                ground_alt_str = msg.replace("b'Altitude (meters): ", '')
-                ground_alt_str = ground_alt_str.replace("\\r\\n'", '')
-                ground_alt = float(ground_alt_str)
-                alt_flag = 1              
+            if msg.find("GNRMC") != -1:
+                result = self.parse_gnrmc(msg)
+                ground_lat = result['latitude']
+                ground_lon = result['longitude']
+                ground_alt = 0  
+                position_flag = 1             
+                    
 
             if debugFlag:
 		
@@ -79,16 +63,10 @@ class ground_station:
              		
                     print("Bearing: ", str(bearing), " degrees")
                 
-                if lat_flag == 1:
+                if position_flag == 1:
 	
                     print("Latitude: ", str(ground_lat), " degrees")
-
-                if lon_flag == 1:
-
                     print("Longitude: ", str(ground_lon), " degrees")
-
-                if alt_flag == 1:
-
                     print("Altitude: " , ground_alt, " meters")
 
         return [ground_lat, ground_lon, ground_alt, bearing]
@@ -200,3 +178,58 @@ class ground_station:
        ser1.write(bytearray(f"W{az_string} {el_string}\r", 'ascii'))
       #ser1.write(bytearray(f"W090 090\r", 'ascii'))
       
+    def parse_gnrmc(self, message):
+        """
+        Parses a GNRMC NMEA message for latitude and longitude.
+
+        Args:
+            message (str): The GNRMC NMEA sentence as a string.
+
+        Returns:
+            dict: A dictionary containing latitude, longitude, and status (if valid).
+        """
+        
+        if not message.startswith("b'$GNRMC"):
+            raise ValueError("Invalid GNRMC message")
+
+        # Split the message into components
+        parts = message.split(",")
+        
+        if len(parts) < 12:
+            raise ValueError("Incomplete GNRMC message")
+
+        # Extract data fields
+        status = parts[2]  # A = Active, V = Void
+        latitude = parts[3]
+        latitude_dir = parts[4]
+        longitude = parts[5][1:]
+        longitude_dir = parts[6]
+
+        # Check if the data is valid
+        if status != "A":
+            return {"status": "Invalid data", "latitude": None, "longitude": None}
+
+        # Convert latitude and longitude to decimal degrees
+        def convert_to_decimal(degrees, direction):
+            if not degrees:
+                return None
+            
+            # Degrees are in ddmm.mmmm format
+            d = int(degrees[:2])
+            m = float(degrees[2:])
+            decimal = d + (m / 60)
+
+            # Apply hemisphere
+            if direction in ["S", "W"]:
+                decimal = -decimal
+
+            return decimal
+
+        lat_decimal = convert_to_decimal(latitude, latitude_dir)
+        lon_decimal = convert_to_decimal(longitude, longitude_dir)
+
+        return {
+            "status": "Active",
+            "latitude": lat_decimal,
+            "longitude": lon_decimal
+        }
