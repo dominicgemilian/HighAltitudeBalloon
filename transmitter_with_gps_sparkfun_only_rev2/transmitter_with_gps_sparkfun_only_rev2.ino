@@ -101,10 +101,13 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 TinyGPSPlus gps;
 
 // Flag to set to payload or ground station mode
-bool groundStation = 0;
+bool groundStation = 1;
 
 // Variable to store NMEA string from GPS board
 String aprsMessageArray;
+
+// Define input pin
+#define INPUT_PIN 15  // Connect a button or other input signal here
 
 void setup() {
 
@@ -115,6 +118,10 @@ void setup() {
   pinMode(DATAOUT, OUTPUT);
   pinMode(DATAIN, INPUT);
   pinMode(SPICS,OUTPUT);
+  
+  // Initialize input pin
+  pinMode(INPUT_PIN, INPUT_PULLUP);  // Using internal pull-up resistor for the input pin
+
 
   digitalWrite(SPICS, HIGH); //disable device
 
@@ -226,6 +233,7 @@ void runHAB() {
       double time = myGNSS.getUnixEpoch();
       String time_str = String(time, 0);
       String time_unix = "Unix Time: " + time_str;
+      
       const uint8_t* time_data = (const uint8_t*)time_unix.c_str();
       rf95.send(time_data, time_unix.length());
       rf95.waitPacketSent();
@@ -267,6 +275,31 @@ void runHAB() {
       SPI.beginTransaction(SPISettings(500000, MSBFIRST, SPI_MODE3));
          
    }
+  
+  // Read data from serial
+  while (rf95.available() > 0) {
+
+    // Should be a message for us now
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+
+    if (rf95.recv(buf, &len)) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      RH_RF95::printBuffer("Received: ", buf, len);
+      //Serial.print("Got: ");
+      Serial.println((char*) buf);
+
+      String receivedMessage = (char*)buf;
+
+      if (receivedMessage == "kill"){
+        Serial.println("kill");
+      }
+
+      //Serial.print("RSSI: ");
+      //Serial.println(rf95.lastRssi(), DEC);
+    }
+       
+  }
 
 
 }
@@ -362,6 +395,42 @@ void loraReceive(){
       RH_RF95::printBuffer("Received: ", buf, len);
       //Serial.print("Got: ");
       Serial.println((char*) buf);
+
+      //Serial.print("RSSI: ");
+      //Serial.println(rf95.lastRssi(), DEC);
+    }
+       
+  }
+
+  // Check the input pin state
+  if (digitalRead(INPUT_PIN) == LOW) { // Active low signal
+    String kill = "kill";
+    const uint8_t* killswitch = (const uint8_t*) kill.c_str();
+    rf95.send(killswitch, kill.length());
+  }
+
+}
+
+void loraReceiveKillswitch(){
+
+  // Read data from serial
+  while (rf95.available() > 0) {
+
+    // Should be a message for us now
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+
+    if (rf95.recv(buf, &len)) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      RH_RF95::printBuffer("Received: ", buf, len);
+      //Serial.print("Got: ");
+      Serial.println((char*) buf);
+
+      String receivedMessage = (char*)buf;
+
+      if (receivedMessage == "kill"){
+        Serial.println("kill");
+      }
 
       //Serial.print("RSSI: ");
       //Serial.println(rf95.lastRssi(), DEC);
