@@ -11,7 +11,6 @@
 #include <Wire.h>
 #include <iostream>
 #include <string>
-#include <TinyGPS++.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library:  http://librarymanager/All#SparkFun_u-blox_GNSS
 
 #define DATAOUT 11      //MOSI
@@ -97,8 +96,6 @@ SFE_UBLOX_GNSS myGNSS;
 
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
-
-TinyGPSPlus gps;
 
 // Flag to set to payload or ground station mode
 bool groundStation = 1;
@@ -258,10 +255,10 @@ void runHAB() {
       rf95.waitPacketSent();
       
       Serial.print("Altitude (mm): ");
-      Serial.println(myGNSS.getAltitude(), 6);
-      double altitude = myGNSS.getAltitude();
+      Serial.println(myGNSS.getAltitudeMSL(), 6);
+      double altitude = myGNSS.getAltitudeMSL();
       String alt_str = String(altitude, 6);
-      String alt = "Altitude (kilometers): " + alt_str;
+      String alt = "Altitude (millimeters): " + alt_str;
       const uint8_t* alt_data = (const uint8_t*)alt.c_str();
       rf95.send((const uint8_t*) alt_data, alt.length());
       rf95.waitPacketSent();
@@ -295,8 +292,8 @@ void runHAB() {
         Serial.println("kill");
       }
 
-      //Serial.print("RSSI: ");
-      //Serial.println(rf95.lastRssi(), DEC);
+      Serial.print("RSSI: ");
+      Serial.println(rf95.lastRssi(), DEC);
     }
        
   }
@@ -396,8 +393,8 @@ void loraReceive(){
       //Serial.print("Got: ");
       Serial.println((char*) buf);
 
-      //Serial.print("RSSI: ");
-      //Serial.println(rf95.lastRssi(), DEC);
+      Serial.print("RSSI: ");
+      Serial.println(rf95.lastRssi(), DEC);
     }
        
   }
