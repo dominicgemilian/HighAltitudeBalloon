@@ -99,10 +99,10 @@ def main():
       
        try:
         print("PTU ready")
-        if len(sys.argv) > 1 and sys.argv[1] == "debugPointingCalcGroundTest":
+        if len(sys.argv) > 1 and sys.argv[1] == "debugPointing":
          node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing), True, True)
         else:
-         node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing))
+         node_rotor.moveGroundStation(groundStation, habPayload, float(ground_bearing), True, False)
        except:
         print("Error on attempt to move ground station likely due to unavailable PTU serial port.")
 

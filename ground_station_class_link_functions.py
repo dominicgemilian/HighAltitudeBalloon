@@ -31,6 +31,7 @@ class ground_station:
         print("getGroundData")
         bearing_flag = 0
         position_flag = 0
+        location_flag = 0
         
         while bearing_flag == 0 or position_flag == 0:   
 
@@ -40,21 +41,33 @@ class ground_station:
              print("=========================== Incoming PNT Message =========================")
              print(msg)
 
-
             if msg.find("bearing: ") != -1:
 
                 bearing_str = msg.replace("b'bearing: ", '')
                 bearing_str = bearing_str.replace("\\r\\n'", '')
                 bearing = float(bearing_str)
                 bearing_flag = 1
-                
 
-            if msg.find("GNRMC") != -1:
+            elif msg.find("GNRMC") != -1 and location_flag == 0:
                 result = self.parse_gnrmc(msg)
                 ground_lat = result['latitude']
                 ground_lon = result['longitude']
-                ground_alt = 0  
-                position_flag = 1             
+                ground_alt = 43 # Boston meters above sea level
+                position_flag = 1
+
+            elif msg.find("GNRMC") != -1 and location_flag == 1:
+                result = self.parse_gnrmc(msg)
+                ground_lat = result['latitude']
+                ground_lon = result['longitude']
+                position_flag = 1
+
+            elif msg.find("GNGGA") != -1:
+                result = self.parse_gngga(msg)
+                ground_lat = result['latitude']
+                ground_lon = result['longitude']
+                ground_alt = result['altitude']
+                position_flag = 1
+                location_flag = 1                             
                     
 
             if debugFlag:
@@ -63,7 +76,7 @@ class ground_station:
              		
                     print("Bearing: ", str(bearing), " degrees")
                 
-                if position_flag == 1:
+                if position_flag == 1 or location_flag ==1:
 	
                     print("Latitude: ", str(ground_lat), " degrees")
                     print("Longitude: ", str(ground_lon), " degrees")
@@ -119,13 +132,16 @@ class ground_station:
                 hab_lon = float(hab_lon_str)
                 lon_flag = 1
                 
-            elif msg.find("Altitude (kilometers): ") != -1:
+            elif msg.find("Altitude (millimeters): ") != -1:
 
-                hab_alt_str = msg.replace("b'Altitude (kilometers): ", '')
+                hab_alt_str = msg.replace("b'Altitude (millimeters): ", '')
                 hab_alt_str = hab_alt_str.replace("\\r\\n'", '')
                 hab_alt = float(hab_alt_str)/1000
-                alt_flag = 1              
-
+                alt_flag = 1  
+                
+            elif msg.find("RSSI:") != -1:                
+                print(msg)
+                
             if debugFlag:
 		
                 if time_flag == 1:
@@ -176,6 +192,7 @@ class ground_station:
       if (noSerial == False):
        ser1 = serial.Serial("/dev/ttyUSB1")
        ser1.write(bytearray(f"W{az_string} {el_string}\r", 'ascii'))
+       
       #ser1.write(bytearray(f"W090 090\r", 'ascii'))
       
     def parse_gnrmc(self, message):
@@ -194,7 +211,6 @@ class ground_station:
 
         # Split the message into components
         parts = message.split(",")
-        
         if len(parts) < 12:
             raise ValueError("Incomplete GNRMC message")
 
@@ -232,4 +248,58 @@ class ground_station:
             "status": "Active",
             "latitude": lat_decimal,
             "longitude": lon_decimal
+        }
+
+
+def parse_gngga(self, message):
+        """
+        Parses a GNGGA NMEA message for latitude and longitude.
+
+        Args:
+            message (str): The GNGGA NMEA sentence as a string.
+
+        Returns:
+            dict: A dictionary containing latitude, longitude, and status (if valid).
+        """
+        
+        if not message.startswith("b'$GNGGA"):
+            raise ValueError("Invalid GNGGA message")
+
+        # Split the message into components
+        parts = message.split(",")
+      
+        if len(parts) < 12:
+            raise ValueError("Incomplete GNGGA message")
+
+        # Extract data fields
+        latitude = parts[2]
+        latitude_dir = parts[3]
+        longitude = parts[4][1:]
+        longitude_dir = parts[5]
+        altitude = parts[9]
+
+
+        # Convert latitude and longitude to decimal degrees
+        def convert_to_decimal(degrees, direction):
+            if not degrees:
+                return None
+            
+            # Degrees are in ddmm.mmmm format
+            d = int(degrees[:2])
+            m = float(degrees[2:])
+            decimal = d + (m / 60)
+
+            # Apply hemisphere
+            if direction in ["S", "W"]:
+                decimal = -decimal
+
+            return decimal
+
+        lat_decimal = convert_to_decimal(latitude, latitude_dir)
+        lon_decimal = convert_to_decimal(longitude, longitude_dir)
+
+        return {
+            "latitude": lat_decimal,
+            "longitude": lon_decimal,
+            "altitude": altitude
         }
